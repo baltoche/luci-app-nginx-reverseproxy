@@ -98,11 +98,19 @@ jobs:
 
       - name: Source tarball + checksums
         run: |
+          set -e
           TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
           tar czf "luci-app-nginx-reverseproxy-${TAG}.tar.gz" --exclude='.git' .
-          mv dist/*.apk dist/ 2>/dev/null || true
+          mkdir -p dist
+          # flatten artifact subdirs, then verify apks are present
+          find dist -mindepth 2 -type f -exec mv -n {} dist/ \; 2>/dev/null || true
+          rmdir dist/apk-* 2>/dev/null || true
+          if ! ls dist/*.apk >/dev/null 2>&1; then
+            echo "::error ::no apks downloaded into dist/ (got: $(ls -la dist/ | tr '\n' ' '))"
+            exit 1
+          fi
           cp "luci-app-nginx-reverseproxy-${TAG}.tar.gz" dist/
-          (cd dist && sha256sum * > SHA256SUMS)
+          (cd dist && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
           ls -la dist/
 
       - name: Create GitHub release
