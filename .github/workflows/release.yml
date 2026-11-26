@@ -98,8 +98,10 @@ jobs:
 
       - name: Source tarball + checksums
         run: |
+          trap 'echo "::error ::tarball step failed at line $LINENO (TAG=${TAG:-unset})"' ERR
           set -e
           TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          echo "TAG=$TAG"
           tar czf "luci-app-nginx-reverseproxy-${TAG}.tar.gz" --exclude='.git' .
           mkdir -p dist
           # flatten artifact subdirs, then verify apks are present
