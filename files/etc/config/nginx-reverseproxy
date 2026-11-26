@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 
 # Example configuration. The shipped example proxies are DISABLED by default
 # (they point to non-existent backends) — enable and edit them as needed.
@@ -15,11 +16,12 @@ config certificate 'wildcard'
 	option cert '/etc/acme/example_ecc/fullchain.cer'
 	option key '/etc/acme/example_ecc/example.key'
 
-# Users for HTTP basic authentication on proxies. The password is hashed
-# into the nginx htpasswd file at generation time (never stored as a hash here).
+# Users for HTTP basic authentication on proxies. Only the HASH is stored
+# (password_hash, e.g. from `openssl passwd -apr1`); plaintext passwords are
+# converted to a hash on save and never reach the UCI config or nginx.
 config auth 'admin'
 	option username 'admin'
-	option password 'secret'
+	# option password_hash '$apr1$…'   # set via the LuCI Users tab
 
 config proxy 'transmission'
 	option enabled '0'

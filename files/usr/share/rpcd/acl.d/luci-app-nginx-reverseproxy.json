@@ -12,7 +12,8 @@
 			"uci": [ "nginx-reverseproxy" ],
 			"file": {
 				"/usr/sbin/nginx-reverseproxy-gen": [ "exec" ],
-				"/etc/init.d/nginx-reverseproxy": [ "exec" ]
+				"/etc/init.d/nginx-reverseproxy": [ "exec" ],
+				"/usr/bin/openssl": [ "exec" ]
 			}
 		}
 	}

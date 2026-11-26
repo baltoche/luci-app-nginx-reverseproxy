@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 'use strict';
 'require tools.views as views';
 

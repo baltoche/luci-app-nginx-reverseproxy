@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: MIT
 # nginx-reverseproxy-gen — generates /etc/nginx/conf.d/00-nginx-reverseproxy-generated.conf
 # (and per-proxy htpasswd files) from UCI "nginx-reverseproxy".
 #
@@ -53,6 +54,16 @@ warn() {
 conf_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^][a-zA-Z0-9 .:/_*@+-]'; }
 # user_unsafe: stricter set for htpasswd usernames (no ':' separator allowed)
 user_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^a-zA-Z0-9._@+-]'; }
+
+# hash_ok: true if $1 is a plausible htpasswd hash ($apr1$, {SHA}, bcrypt, sha256/512 crypt)
+hash_ok() {
+	case "$1" in
+		'$apr1$'*|'{SHA}'*|'$2y$'*|'$2b$'*|'$5$'*|'$6$'*) ;;
+		*) return 1 ;;
+	esac
+	printf '%s' "$1" | LC_ALL=C grep -q '[^A-Za-z0-9$./{}=+-]' && return 1
+	return 0
+}
 
 # get_list <section> <option> — print each UCI list value of the option on its
 # own line (list values may contain spaces, so `uci get` cannot be used).
@@ -157,20 +168,32 @@ tmp=$(mktemp) || exit 1
 			htmp=$(mktemp) || exit 1
 			for u in $(uci -q get nginx-reverseproxy.$sec.auth_users); do
 				un=$(uci -q get "nginx-reverseproxy.$u.username")
-				pw=$(uci -q get "nginx-reverseproxy.$u.password")
-				if [ -z "$un" ] || [ -z "$pw" ]; then
-					warn "proxy '$sec': auth user '$u' has no username/password, skipped"
+				h=$(uci -q get "nginx-reverseproxy.$u.password_hash")
+				if [ -z "$h" ]; then
+					# legacy: plaintext password, hashed at generation time
+					pw=$(uci -q get "nginx-reverseproxy.$u.password")
+					if [ -n "$pw" ]; then
+						if h=$(hash_pw "$pw"); then
+							:
+						else
+							warn "proxy '$sec': no password hasher available (need openssl or sha1sum+base64), user '$un' skipped"
+							continue
+						fi
+					fi
+				fi
+				if [ -z "$un" ] || [ -z "$h" ]; then
+					warn "proxy '$sec': auth user '$u' has no username/password_hash, skipped"
 					continue
 				fi
 				if user_unsafe "$un"; then
 					warn "proxy '$sec': invalid username '$un', skipped"
 					continue
 				fi
-				if h=$(hash_pw "$pw"); then
-					printf '%s:%s\n' "$un" "$h" >> "$htmp"
-				else
-					warn "proxy '$sec': no password hasher available (need openssl or sha1sum+base64), user '$un' skipped"
+				if ! hash_ok "$h"; then
+					warn "proxy '$sec': invalid password_hash for user '$un', skipped"
+					continue
 				fi
+				printf '%s:%s\n' "$un" "$h" >> "$htmp"
 			done
 			chmod 600 "$htmp"; mv "$htmp" "$hp"
 			if [ ! -s "$hp" ]; then

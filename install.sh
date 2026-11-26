@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: MIT
 # Reinstalls luci-app-nginx-reverseproxy (files outside /etc) from /root/maj/luci-app-nginx-reverseproxy
 SRC=/root/maj/luci-app-nginx-reverseproxy
 [ -d "$SRC" ] || SRC=/home/balt/maj/luci-app-nginx-reverseproxy

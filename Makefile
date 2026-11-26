@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 #
 # luci-app-nginx-reverseproxy — LuCI app to manage nginx reverse proxies (SNI/HTTPS)
 #
