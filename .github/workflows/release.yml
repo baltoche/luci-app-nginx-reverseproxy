@@ -31,14 +31,28 @@ jobs:
       image: ${{ matrix.sdk }}
       options: --user root
     steps:
-      - name: Checkout package into the SDK tree
-        uses: actions/checkout@v4
-        with:
-          path: /builder/package/luci-app-nginx-reverseproxy
-
-      - name: Prepare feeds and config
+      # plain git clone instead of actions/checkout: JS actions are unreliable
+      # when the target path lives outside the mounted workspace of a
+      # container job (git itself is present in the SDK image)
+      - name: Fetch package sources into the SDK tree
         run: |
+          set -e
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            git clone --depth 1 --branch "${GITHUB_REF_NAME}" \
+              "https://github.com/${GITHUB_REPOSITORY}.git" \
+              /builder/package/luci-app-nginx-reverseproxy
+          else
+            git clone --depth 1 \
+              "https://github.com/${GITHUB_REPOSITORY}.git" \
+              /builder/package/luci-app-nginx-reverseproxy
+          fi
+
+      - name: Extract SDK if needed, prepare feeds and config
+        run: |
+          set -e
           cd /builder
+          # snapshot SDK images ship without the extracted tree
+          [ -d scripts ] || bash setup.sh
           ./scripts/feeds update base packages luci
           ./scripts/feeds install -a
           make defconfig
