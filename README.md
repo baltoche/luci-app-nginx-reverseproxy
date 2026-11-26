@@ -52,8 +52,8 @@ apk add --allow-untrusted luci-app-nginx-reverseproxy_*_<arch>.apk
 ## Manual install (no buildroot)
 
 ```sh
-# copy this repo's files/ tree onto the router root, then:
-./install.sh        # copies files, registers sysupgrade.conf, enables+starts the service, restarts rpcd
+# clone this repo onto the router, then:
+./install.sh        # copies root/ + htdocs/, registers sysupgrade.conf, enables+starts the service, restarts rpcd
 ```
 
 Note: `install.sh` also copies the example `/etc/config/nginx-reverseproxy` — back up your existing router config first if you already have proxies configured.
@@ -67,7 +67,7 @@ Note: `install.sh` also copies the example `/etc/config/nginx-reverseproxy` — 
 5. Point a DNS record (covered by the certificate in use) at the router
 6. **Log** tab shows nginx/reverse-proxy log lines (upstream errors, auth failures, reloads)
 
-Example entries shipped in `files/etc/config/nginx-reverseproxy` (all `enabled '0'` — they are placeholders, not real backends):
+Example entries shipped in `root/etc/config/nginx-reverseproxy` (all `enabled '0'` — they are placeholders, not real backends):
 
 | Domain | Upstream |
 |---|---|

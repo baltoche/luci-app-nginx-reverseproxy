@@ -1,0 +1,276 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:35
+msgid "Add certificate"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:26
+msgid "Add proxy"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:25
+msgid "Add user"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:31
+msgid "Additional certificates"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:88
+msgid "Advanced"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:80
+msgid "Allowed users"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:74
+msgid "Authentication realm"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:40
+msgid "Backend to proxy to, e.g. 127.0.0.1:8096 or 10.0.0.4:8989"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:67
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:68
+msgid "Basic authentication"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:18
+msgid "Basic authentication users"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:81
+msgid ""
+"Basic authentication users allowed to access this proxy (managed on the "
+"Users tab). At least one valid user is required, otherwise all requests are "
+"rejected."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:58
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:59
+msgid "Certificate"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:25
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:38
+msgid "Certificate file"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:60
+msgid ""
+"Certificate for this proxy (managed on the Certificates tab). \"Default\" "
+"uses the default certificate, i.e. the LuCI certificate unless overridden "
+"there."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:22
+msgid ""
+"Certificate used for all proxies that do not select a specific certificate. "
+"Leave both fields empty to use the same certificate as the LuCI web "
+"interface (the nginx \"luci\" server certificate, or the uhttpd certificate /"
+"etc/uhttpd.crt on classic setups)."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:18
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/luci/menu.d/luci-app-nginx-reverseproxy.json:39
+msgid "Certificates"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:96
+msgid "Connect timeout"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:121
+msgid "Custom nginx options"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:61
+msgid "Default (LuCI certificate)"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:21
+msgid "Default certificate"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:44
+msgid "Description"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:33
+msgid "Domain name"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:19
+msgid ""
+"Each enabled proxy generates an HTTPS server block (port 443, SNI routing) "
+"for the given domain, proxying to the upstream host:port. Certificates and "
+"basic auth users are managed on their own tabs; logs on the Log tab. Use "
+"\"Add proxy\" to open the form, then Save & Apply to apply to nginx."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:29
+msgid "Enabled"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:37
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:28
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:27
+msgid "General"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/rpcd/acl.d/luci-app-nginx-reverseproxy.json:3
+msgid "Grant UCI access for luci-app-nginx-reverseproxy"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/luci/menu.d/luci-app-nginx-reverseproxy.json:51
+msgid "Log"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:89
+msgid "Max. request body size"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:116
+msgid ""
+"Off (default) is recommended for WebSockets, SSE and streaming responses."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:122
+msgid ""
+"One raw nginx directive per line, emitted verbatim inside the location "
+"block, e.g. <code>proxy_set_header X-Custom value;</code>. Must end with a "
+"semicolon and contain no braces. Directives already managed above "
+"(proxy_pass, proxy_buffering, timeouts, client_max_body_size, auth_basic, …) "
+"are rejected to avoid duplicate-directive errors."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:45
+msgid "Optional note, emitted as a comment in the generated nginx config."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:31
+msgid "Password"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:48
+msgid "Path prefix"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:39
+msgid ""
+"Path to the PEM certificate incl. chain, e.g. /etc/acme/example_ecc/"
+"fullchain.cer"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:44
+msgid "Path to the PEM private key, e.g. /etc/acme/example_ecc/example.key"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:32
+msgid ""
+"Plaintext is never stored: on save it is converted to an $apr1$ hash "
+"(password_hash) in the UCI config and only the hash reaches nginx. Leave "
+"empty to keep the current hash."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:28
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:43
+msgid "Private key file"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:18
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:21
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/luci/menu.d/luci-app-nginx-reverseproxy.json:15
+msgid "Proxies"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/certificates.js:19
+msgid ""
+"Proxies use the same certificate as the LuCI web interface by default (see "
+"below). Add further certificates here (e.g. an acme.sh wildcard) with \"Add "
+"certificate\", then assign them to individual proxies on the Proxies tab. "
+"Changes are applied to nginx on Save & Apply."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:115
+msgid "Proxy buffering"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:103
+msgid "Raise for long-lived responses / streaming."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:102
+msgid "Read timeout"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:69
+msgid "Require HTTP basic authentication (401) for this proxy."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/luci/menu.d/luci-app-nginx-reverseproxy.json:3
+msgid "Reverse Proxy"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/log.js:10
+msgid "Reverse Proxy Log"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:109
+msgid "Send timeout"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:37
+msgid "Stored password hash"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:75
+msgid "Text shown in the browser login prompt."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:39
+msgid "Upstream (host:port)"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:28
+msgid "Username"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:21
+#: applications/luci-app-nginx-reverseproxy/root/usr/share/luci/menu.d/luci-app-nginx-reverseproxy.json:27
+msgid "Users"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:19
+msgid ""
+"Users allowed to access proxies that have basic authentication enabled (see "
+"the Proxies tab). Use \"Add user\" to open the form and its Save button to "
+"store the user, then assign it to a proxy under \"Allowed users\". Passwords "
+"are never stored in plain text: on save the entered password is converted to "
+"an $apr1$ hash (password_hash) in the UCI config; only the hash reaches the "
+"nginx htpasswd file. On Save & Apply the htpasswd files are regenerated (no "
+"nginx reload needed — they are read per request)."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:53
+msgid "WebSockets"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:90
+msgid "e.g. 128M, 1G, or 0 for unlimited (uploads)."
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/proxies.js:34
+msgid "e.g. jellyfin.example.net — must be covered by the certificate in use"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:42
+msgid "not set"
+msgstr ""
+
+#: applications/luci-app-nginx-reverseproxy/htdocs/luci-static/resources/view/nginx-reverseproxy/users.js:42
+msgid "set (%s…)"
+msgstr ""

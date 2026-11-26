@@ -1,0 +1,277 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# nginx-reverseproxy-gen — generates /etc/nginx/conf.d/00-nginx-reverseproxy-generated.conf
+# (and per-proxy htpasswd files) from UCI "nginx-reverseproxy".
+#
+# Certificate resolution for each proxy:
+#   1. proxy's own 'certificate' option (a "config certificate" section)
+#   2. settings.ssl_certificate / settings.ssl_certificate_key (explicit override)
+#   3. the certificate of the server block that serves LuCI
+#      (nginx "luci.locations" server, else uhttpd.main.cert/key, default /etc/uhttpd.crt)
+#
+# Basic auth: proxies with basic_auth=1 get an htpasswd file in $HTPASSWD_DIR
+# built from the referenced "config auth" sections (passwords are hashed,
+# never written in plain text).
+
+OUT=${NGINX_RP_OUT:-/etc/nginx/conf.d/00-nginx-reverseproxy-generated.conf}
+HTPASSWD_DIR=${NGINX_RP_HTPASSWD_DIR:-/etc/nginx/reverseproxy-htpasswd}
+
+# --- default certificate -----------------------------------------------------
+DEF_CERT=$(uci -q get nginx-reverseproxy.settings.ssl_certificate)
+DEF_KEY=$(uci -q get nginx-reverseproxy.settings.ssl_certificate_key)
+
+if [ -z "$DEF_CERT" ] || [ -z "$DEF_KEY" ]; then
+	# certificate of the nginx server block that serves LuCI (luci-nginx setups)
+	for s in $(uci -q show nginx 2>/dev/null | sed -n 's/^nginx\.\([^.]*\)=server$/\1/p'); do
+		case "$(uci -q get nginx.$s.include)" in
+		*luci.locations*)
+			c=$(uci -q get nginx.$s.ssl_certificate)
+			k=$(uci -q get nginx.$s.ssl_certificate_key)
+			[ -n "$c" ] && [ -n "$k" ] && { DEF_CERT=$c; DEF_KEY=$k; break; }
+			;;
+		esac
+	done
+fi
+if [ -z "$DEF_CERT" ] || [ -z "$DEF_KEY" ]; then
+	# classic uhttpd/LuCI certificate
+	DEF_CERT=$(uci -q get uhttpd.main.cert)
+	DEF_KEY=$(uci -q get uhttpd.main.key)
+fi
+[ -z "$DEF_CERT" ] && DEF_CERT=/etc/uhttpd.crt
+[ -z "$DEF_KEY" ] && DEF_KEY=/etc/uhttpd.key
+
+# --- helpers -----------------------------------------------------------------
+# warn: report a problem on stderr AND to syslog (tag nginx-reverseproxy), so
+# it shows up in the LuCI Log tab when debugging a misconfigured proxy.
+warn() {
+	echo "warning: $*" >&2
+	command -v logger >/dev/null 2>&1 && logger -t nginx-reverseproxy -p daemon.warning "$*"
+}
+
+# conf_unsafe: true if $1 contains chars that must not land in an nginx config
+# (allows letters, digits, space, . : / _ * [ ] @ + - — covers hostnames,
+#  IPv6 upstreams like [::1]:8080, paths and acme paths with literal '*').
+conf_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^][a-zA-Z0-9 .:/_*@+-]'; }
+# realm_unsafe: true if $1 cannot be embedded in a double-quoted nginx string.
+# Inside "..." only '"' and '\' are special for nginx; control chars (incl.
+# newline, which grep cannot see because it is line-based) would break the
+# line. Everything else (' ? ! UTF-8 ...) is fine.
+realm_unsafe() {
+	_nl='
+'
+	case "$1" in
+		*'"'*|*'\'*|*"$_nl"*) return 0 ;;
+	esac
+	printf '%s' "$1" | LC_ALL=C grep -q '[[:cntrl:]]'
+}
+# user_unsafe: stricter set for htpasswd usernames (no ':' separator allowed)
+user_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^a-zA-Z0-9._@+-]'; }
+
+# hash_ok: true if $1 is a plausible htpasswd hash ($apr1$, {SHA}, bcrypt, sha256/512 crypt)
+hash_ok() {
+	case "$1" in
+		'$apr1$'*|'{SHA}'*|'$2y$'*|'$2b$'*|'$5$'*|'$6$'*) ;;
+		*) return 1 ;;
+	esac
+	printf '%s' "$1" | LC_ALL=C grep -q '[^A-Za-z0-9$./{}=+-]' && return 1
+	return 0
+}
+
+# get_list <section> <option> — print each UCI list value of the option on its
+# own line (list values may contain spaces, so `uci get` cannot be used).
+get_list() {
+	uci -q show "nginx-reverseproxy.$1" 2>/dev/null | awk -v opt=".$2=" '
+		index($0, opt) > 0 {
+			rest = substr($0, index($0, "=") + 1)
+			n = split(rest, p, "\047")
+			for (i = 2; i < n; i += 2) print p[i]
+		}'
+}
+
+# reserved directives: emitted by the generator itself, custom_options may not
+# redefine them (would produce a duplicate-directive nginx error).
+is_reserved() {
+	case "$1" in
+		proxy_pass|proxy_buffering|client_max_body_size|proxy_connect_timeout|proxy_read_timeout|proxy_send_timeout|proxy_http_version|listen|server_name|ssl_certificate|ssl_certificate_key|auth_basic|auth_basic_user_file|location)
+			return 0;;
+	esac
+	return 1
+}
+
+# hash_pw: print an htpasswd hash for $1. Prefers $apr1$ (openssl), falls back
+# to nginx-native {SHA}. Returns non-zero if no hasher is available.
+hash_pw() {
+	if command -v openssl >/dev/null 2>&1; then
+		h=$(printf '%s' "$1" | openssl passwd -apr1 -stdin 2>/dev/null)
+		if [ -n "$h" ]; then printf '%s\n' "$h"; return 0; fi
+		b=$(printf '%s' "$1" | openssl dgst -sha1 -binary 2>/dev/null | openssl base64 2>/dev/null | tr -d '\n')
+		if [ -n "$b" ]; then printf '{SHA}%s\n' "$b"; return 0; fi
+	fi
+	if command -v sha1sum >/dev/null 2>&1 && command -v base64 >/dev/null 2>&1; then
+		hex=$(printf '%s' "$1" | sha1sum | cut -d' ' -f1)
+		b=$({
+			while [ -n "$hex" ]; do
+				pair=${hex%"${hex#??}"}; hex=${hex#??}
+				printf "\\$(printf '%03o' "$((0x$pair))")"
+			done
+		} | base64 | tr -d '\n')
+		if [ -n "$b" ]; then printf '{SHA}%s\n' "$b"; return 0; fi
+	fi
+	return 1
+}
+
+# --- basic auth htpasswd files ------------------------------------------------
+mkdir -p "$HTPASSWD_DIR" 2>/dev/null
+rm -f "$HTPASSWD_DIR"/*.htpasswd 2>/dev/null
+
+# --- generate server blocks ---------------------------------------------------
+tmp=$(mktemp) || exit 1
+{
+	echo "# Auto-generated by luci-app-nginx-reverseproxy — do not edit by hand"
+	for sec in $(uci -q show nginx-reverseproxy 2>/dev/null | sed -n 's/^nginx-reverseproxy\.\([^.]*\)=proxy$/\1/p'); do
+		[ "$(uci -q get nginx-reverseproxy.$sec.enabled)" = "1" ] || continue
+		domain=$(uci -q get nginx-reverseproxy.$sec.server_name)
+		upstream=$(uci -q get nginx-reverseproxy.$sec.upstream)
+		path=$(uci -q get nginx-reverseproxy.$sec.path); [ -z "$path" ] && path='/'
+		ws=$(uci -q get nginx-reverseproxy.$sec.websockets)
+		[ -z "$domain" -o -z "$upstream" ] && continue
+		desc=$(uci -q get nginx-reverseproxy.$sec.description | tr -d '\000-\037\177')
+		if conf_unsafe "$domain" || conf_unsafe "$upstream" || conf_unsafe "$path"; then
+			warn "skipping proxy '$sec': server_name/upstream/path contain invalid characters"
+			continue
+		fi
+
+		# certificate selection
+		cert=$DEF_CERT; key=$DEF_KEY
+		ref=$(uci -q get nginx-reverseproxy.$sec.certificate)
+		if [ -n "$ref" ]; then
+			c=$(uci -q get "nginx-reverseproxy.$ref.cert")
+			k=$(uci -q get "nginx-reverseproxy.$ref.key")
+			if [ -n "$c" ] && [ -n "$k" ]; then
+				case "$c$k" in
+				*\**) cert=$c; key=$k ;;   # glob/literal-'*' paths: let nginx resolve
+				*)
+					if [ -f "$c" ] && [ -f "$k" ]; then
+						cert=$c; key=$k
+					else
+						warn "proxy '$sec': certificate '$ref' files not found ($c / $k), using default"
+					fi
+					;;
+				esac
+			else
+				warn "proxy '$sec': certificate '$ref' has no cert/key set, using default"
+			fi
+		fi
+		case "$cert$key" in
+		*\**) : ;;   # glob/literal-'*' paths are not checked here
+		*)
+			if [ ! -f "$cert" ] || [ ! -f "$key" ]; then
+				warn "skipping proxy '$sec' ($domain): certificate files not found ($cert / $key)"
+				continue
+			fi
+			;;
+		esac
+
+		# basic auth: build this proxy's htpasswd file
+		auth=0; realm='Restricted'; hp="$HTPASSWD_DIR/$sec.htpasswd"
+		if [ "$(uci -q get nginx-reverseproxy.$sec.basic_auth)" = "1" ]; then
+			r=$(uci -q get nginx-reverseproxy.$sec.auth_realm)
+			if [ -n "$r" ]; then
+				if realm_unsafe "$r"; then
+					warn "proxy '$sec': auth_realm contains a double quote, backslash or control character, falling back to 'Restricted'"
+				else
+					realm=$r
+				fi
+			fi
+			htmp=$(mktemp) || exit 1
+			for u in $(uci -q get nginx-reverseproxy.$sec.auth_users); do
+				un=$(uci -q get "nginx-reverseproxy.$u.username")
+				h=$(uci -q get "nginx-reverseproxy.$u.password_hash")
+				if [ -z "$h" ]; then
+					# legacy: plaintext password, hashed at generation time
+					pw=$(uci -q get "nginx-reverseproxy.$u.password")
+					if [ -n "$pw" ]; then
+						if h=$(hash_pw "$pw"); then
+							:
+						else
+							warn "proxy '$sec': no password hasher available (need openssl or sha1sum+base64), user '$un' skipped"
+							continue
+						fi
+					fi
+				fi
+				if [ -z "$un" ] || [ -z "$h" ]; then
+					warn "proxy '$sec': auth user '$u' has no username/password_hash, skipped"
+					continue
+				fi
+				if user_unsafe "$un"; then
+					warn "proxy '$sec': invalid username '$un', skipped"
+					continue
+				fi
+				if ! hash_ok "$h"; then
+					warn "proxy '$sec': invalid password_hash for user '$un', skipped"
+					continue
+				fi
+				printf '%s:%s\n' "$un" "$h" >> "$htmp"
+			done
+			chmod 600 "$htmp"; mv "$htmp" "$hp"
+			if [ ! -s "$hp" ]; then
+				warn "proxy '$sec': basic auth enabled but no valid users — all requests will be rejected (401)"
+			fi
+			auth=1
+		fi
+
+		[ -n "$desc" ] && echo "# $desc"
+		echo "server {"
+		echo "	listen 443 ssl;"
+		echo "	listen [::]:443 ssl;"
+		echo "	server_name $domain;"
+		echo "	ssl_certificate $cert;"
+		echo "	ssl_certificate_key $key;"
+		echo "	location $path {"
+		if [ "$auth" = "1" ]; then
+			echo "		auth_basic \"$realm\";"
+			echo "		auth_basic_user_file $hp;"
+		fi
+		echo "		proxy_pass http://$upstream;"
+		echo "		proxy_set_header Host \$host;"
+		echo "		proxy_set_header X-Real-IP \$remote_addr;"
+		echo "		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+		echo "		proxy_set_header X-Forwarded-Proto \$scheme;"
+		echo "		proxy_http_version 1.1;"
+		if [ "$ws" = "1" ]; then
+			echo "		proxy_set_header Upgrade \$http_upgrade;"
+			echo "		proxy_set_header Connection \"upgrade\";"
+		fi
+		# advanced options (validated; emitted only when set, except buffering)
+		cmb=$(uci -q get nginx-reverseproxy.$sec.client_max_body_size)
+		pct=$(uci -q get nginx-reverseproxy.$sec.proxy_connect_timeout)
+		prt=$(uci -q get nginx-reverseproxy.$sec.proxy_read_timeout)
+		pst=$(uci -q get nginx-reverseproxy.$sec.proxy_send_timeout)
+		buf=$(uci -q get nginx-reverseproxy.$sec.buffering)
+		[ -n "$cmb" ] && ! conf_unsafe "$cmb" && printf '\t\tclient_max_body_size %s;\n' "$cmb"
+		[ -n "$pct" ] && ! conf_unsafe "$pct" && printf '\t\tproxy_connect_timeout %s;\n' "$pct"
+		[ -n "$prt" ] && ! conf_unsafe "$prt" && printf '\t\tproxy_read_timeout %s;\n' "$prt"
+		[ -n "$pst" ] && ! conf_unsafe "$pst" && printf '\t\tproxy_send_timeout %s;\n' "$pst"
+		if [ "$buf" = "1" ]; then
+			printf '\t\tproxy_buffering on;\n'
+		else
+			printf '\t\tproxy_buffering off;\n'
+		fi
+		# custom options: one raw nginx directive per line, validated
+		get_list "$sec" custom_options | while IFS= read -r line; do
+			if ! printf '%s\n' "$line" | LC_ALL=C grep -qE '^[[:space:]]*[^}{[:space:]][^}{]*;[[:space:]]*$'; then
+				warn "proxy '$sec': invalid custom option '$line' (must end with ';' and contain no braces), skipped"
+				continue
+			fi
+			kw=$(printf '%s\n' "$line" | awk '{print $1}')
+			if is_reserved "$kw"; then
+				warn "proxy '$sec': custom option '$line' uses a reserved directive, skipped"
+				continue
+			fi
+			printf '\t\t%s\n' "$line"
+		done
+		echo "	}"
+		echo "}"
+	done
+} > "$tmp"
+mv "$tmp" "$OUT"

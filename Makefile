@@ -23,9 +23,12 @@ LUCI_DESCRIPTION:=Create and edit nginx reverse proxies from LuCI (tabs: Proxies
 #   uci/rpcd/busybox are base as well; no ca-bundle needed — the app does no outbound TLS)
 LUCI_DEPENDS:=+luci-base +nginx +openssl-util
 LUCI_PKGARCH:=all
+LUCI_URL:=https://github.com/baltoche/luci-app-nginx-reverseproxy
+LUCI_MAINTAINER:=Balthazar <baltoche@gmail.com>
 
 PKG_VERSION:=1.1.0
 PKG_RELEASE:=1
+PKG_LICENSE:=MIT
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

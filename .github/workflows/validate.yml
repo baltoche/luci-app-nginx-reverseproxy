@@ -12,28 +12,28 @@ jobs:
       - uses: actions/checkout@v4
       - name: Shell syntax check
         run: |
-          sh -n files/etc/init.d/nginx-reverseproxy && echo "OK init"
-          sh -n files/usr/sbin/nginx-reverseproxy-gen && echo "OK gen"
+          sh -n root/etc/init.d/nginx-reverseproxy && echo "OK init"
+          sh -n root/usr/sbin/nginx-reverseproxy-gen && echo "OK gen"
           sh -n install.sh && echo "OK install.sh"
       - name: JS syntax check
         uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: |
-          for f in files/www/luci-static/resources/view/nginx-reverseproxy/*.js; do
+          for f in htdocs/luci-static/resources/view/nginx-reverseproxy/*.js; do
             node --check "$f" && echo "OK $f" || exit 1
           done
       - name: JSON validity
         run: |
-          for j in files/etc/ucitrack/*.json files/usr/share/luci/menu.d/*.json files/usr/share/rpcd/acl.d/*.json; do
+          for j in root/etc/ucitrack/*.json root/usr/share/luci/menu.d/*.json root/usr/share/rpcd/acl.d/*.json; do
             python3 -m json.tool "$j" > /dev/null && echo "OK $j"
           done
       - name: UCI config parse (basic)
         run: |
-          grep -q "config proxy" files/etc/config/nginx-reverseproxy && echo "OK uci config"
+          grep -q "config proxy" root/etc/config/nginx-reverseproxy && echo "OK uci config"
       - name: No secrets
         run: |
-          if grep -rniE "(private_key|preshared_key|password) *'[^']{8,}'" files/ README.md Makefile; then
+          if grep -rniE "(private_key|preshared_key|password) *'[^']{8,}'" root/ htdocs/ README.md Makefile; then
             echo "::error::secret detected"; exit 1
           fi
           echo "clean"

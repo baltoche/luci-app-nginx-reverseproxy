@@ -1,0 +1,62 @@
+{
+	"admin/services/nginx-reverseproxy": {
+		"title": "Reverse Proxy",
+		"order": 60,
+		"action": {
+			"type": "alias",
+			"path": "admin/services/nginx-reverseproxy/proxies"
+		},
+		"depends": {
+			"acl": [ "luci-app-nginx-reverseproxy" ],
+			"uci": { "nginx-reverseproxy": true }
+		}
+	},
+	"admin/services/nginx-reverseproxy/proxies": {
+		"title": "Proxies",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "nginx-reverseproxy/proxies"
+		},
+		"depends": {
+			"acl": [ "luci-app-nginx-reverseproxy" ],
+			"uci": { "nginx-reverseproxy": true }
+		}
+	},
+	"admin/services/nginx-reverseproxy/users": {
+		"title": "Users",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "nginx-reverseproxy/users"
+		},
+		"depends": {
+			"acl": [ "luci-app-nginx-reverseproxy" ],
+			"uci": { "nginx-reverseproxy": true }
+		}
+	},
+	"admin/services/nginx-reverseproxy/certificates": {
+		"title": "Certificates",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "nginx-reverseproxy/certificates"
+		},
+		"depends": {
+			"acl": [ "luci-app-nginx-reverseproxy" ],
+			"uci": { "nginx-reverseproxy": true }
+		}
+	},
+	"admin/services/nginx-reverseproxy/log": {
+		"title": "Log",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "nginx-reverseproxy/log"
+		},
+		"depends": {
+			"acl": [ "luci-app-nginx-reverseproxy" ],
+			"uci": { "nginx-reverseproxy": true }
+		}
+	}
+}
