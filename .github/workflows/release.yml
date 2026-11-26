@@ -50,7 +50,7 @@ jobs:
       - name: Collect apk
         run: |
           mkdir -p /builder/dist
-          cp /builder/bin/packages/${{ matrix.arch }}/luci/luci-app-nginx-reverseproxy_*.apk /builder/dist/
+          find /builder/bin/packages -name 'luci-app-nginx-reverseproxy_*.apk' -exec cp -v {} /builder/dist/ \;
           ls -la /builder/dist/
 
       - name: Upload apk artifact
