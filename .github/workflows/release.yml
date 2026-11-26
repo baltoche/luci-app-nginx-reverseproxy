@@ -102,7 +102,9 @@ jobs:
           set -e
           TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
           echo "TAG=$TAG"
-          tar czf "luci-app-nginx-reverseproxy-${TAG}.tar.gz" --exclude='.git' .
+          # write the tarball outside the tree being archived, otherwise tar
+          # fails with "file changed as we read it"
+          tar czf "$RUNNER_TEMP/luci-app-nginx-reverseproxy-${TAG}.tar.gz" --exclude='.git' .
           mkdir -p dist
           # flatten artifact subdirs, then verify apks are present
           find dist -mindepth 2 -type f -exec mv -n {} dist/ \; 2>/dev/null || true
@@ -111,7 +113,7 @@ jobs:
             echo "::error ::no apks downloaded into dist/ (got: $(ls -la dist/ | tr '\n' ' '))"
             exit 1
           fi
-          cp "luci-app-nginx-reverseproxy-${TAG}.tar.gz" dist/
+          cp "$RUNNER_TEMP/luci-app-nginx-reverseproxy-${TAG}.tar.gz" dist/
           (cd dist && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
           ls -la dist/
 
