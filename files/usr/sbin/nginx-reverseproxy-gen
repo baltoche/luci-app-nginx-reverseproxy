@@ -52,6 +52,18 @@ warn() {
 # (allows letters, digits, space, . : / _ * [ ] @ + - — covers hostnames,
 #  IPv6 upstreams like [::1]:8080, paths and acme paths with literal '*').
 conf_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^][a-zA-Z0-9 .:/_*@+-]'; }
+# realm_unsafe: true if $1 cannot be embedded in a double-quoted nginx string.
+# Inside "..." only '"' and '\' are special for nginx; control chars (incl.
+# newline, which grep cannot see because it is line-based) would break the
+# line. Everything else (' ? ! UTF-8 ...) is fine.
+realm_unsafe() {
+	_nl='
+'
+	case "$1" in
+		*'"'*|*'\'*|*"$_nl"*) return 0 ;;
+	esac
+	printf '%s' "$1" | LC_ALL=C grep -q '[[:cntrl:]]'
+}
 # user_unsafe: stricter set for htpasswd usernames (no ':' separator allowed)
 user_unsafe() { printf '%s' "$1" | LC_ALL=C grep -q '[^a-zA-Z0-9._@+-]'; }
 
@@ -123,7 +135,7 @@ tmp=$(mktemp) || exit 1
 		path=$(uci -q get nginx-reverseproxy.$sec.path); [ -z "$path" ] && path='/'
 		ws=$(uci -q get nginx-reverseproxy.$sec.websockets)
 		[ -z "$domain" -o -z "$upstream" ] && continue
-		desc=$(uci -q get nginx-reverseproxy.$sec.description)
+		desc=$(uci -q get nginx-reverseproxy.$sec.description | tr -d '\000-\037\177')
 		if conf_unsafe "$domain" || conf_unsafe "$upstream" || conf_unsafe "$path"; then
 			warn "skipping proxy '$sec': server_name/upstream/path contain invalid characters"
 			continue
@@ -164,7 +176,13 @@ tmp=$(mktemp) || exit 1
 		auth=0; realm='Restricted'; hp="$HTPASSWD_DIR/$sec.htpasswd"
 		if [ "$(uci -q get nginx-reverseproxy.$sec.basic_auth)" = "1" ]; then
 			r=$(uci -q get nginx-reverseproxy.$sec.auth_realm)
-			if [ -n "$r" ] && ! conf_unsafe "$r"; then realm=$r; fi
+			if [ -n "$r" ]; then
+				if realm_unsafe "$r"; then
+					warn "proxy '$sec': auth_realm contains a double quote, backslash or control character, falling back to 'Restricted'"
+				else
+					realm=$r
+				fi
+			fi
 			htmp=$(mktemp) || exit 1
 			for u in $(uci -q get nginx-reverseproxy.$sec.auth_users); do
 				un=$(uci -q get "nginx-reverseproxy.$u.username")
