@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# luci-app-nginx-reverseproxy : regenerate nginx conf and reload nginx
+START=99
+
+start() {
+	/usr/sbin/nginx-reverseproxy-gen
+	/etc/init.d/nginx reload
+}
+
+reload() {
+	start
+}

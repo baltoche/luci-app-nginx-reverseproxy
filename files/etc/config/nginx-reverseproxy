@@ -1,0 +1,59 @@
+
+# Example configuration. The shipped example proxies are DISABLED by default
+# (they point to non-existent backends) — enable and edit them as needed.
+
+config settings 'settings'
+	# Default certificate for proxies that do not select a specific one.
+	# Empty = use the same certificate as the LuCI web interface
+	# (nginx "luci" server certificate, or /etc/uhttpd.crt + /etc/uhttpd.key with uhttpd).
+	# option ssl_certificate '/etc/uhttpd.crt'
+	# option ssl_certificate_key '/etc/uhttpd.key'
+
+# Additional certificates that can be assigned to individual proxies
+# (via the proxy's 'certificate' option on the Proxies tab).
+config certificate 'wildcard'
+	option cert '/etc/acme/example_ecc/fullchain.cer'
+	option key '/etc/acme/example_ecc/example.key'
+
+# Users for HTTP basic authentication on proxies. The password is hashed
+# into the nginx htpasswd file at generation time (never stored as a hash here).
+config auth 'admin'
+	option username 'admin'
+	option password 'secret'
+
+config proxy 'transmission'
+	option enabled '0'
+	option description 'Transmission web UI'
+	option server_name 'transmission.example.net'
+	option upstream '127.0.0.1:9091'
+	option path '/'
+	option websockets '0'
+	# option certificate 'wildcard'
+	# option basic_auth '1'
+	# option auth_realm 'Restricted'
+	# list auth_users 'admin'
+
+config proxy 'sonarr'
+	option enabled '0'
+	option server_name 'sonarr.example.net'
+	option upstream '10.0.0.4:8989'
+	option path '/'
+	option websockets '0'
+
+config proxy 'jellyfin'
+	option enabled '0'
+	option server_name 'jellyfin.example.net'
+	option upstream '127.0.0.1:8096'
+	option path '/'
+	option websockets '1'
+	# option certificate 'wildcard'
+	# option basic_auth '1'
+	# option auth_realm 'Media'
+	# list auth_users 'admin'
+	# advanced tab options (sane defaults are pre-filled in LuCI):
+	# option client_max_body_size '128M'
+	# option proxy_connect_timeout '60s'
+	# option proxy_read_timeout '300s'
+	# option proxy_send_timeout '300s'
+	# option buffering '0'
+	# list custom_options 'proxy_set_header X-Custom "value";'

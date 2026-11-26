@@ -1,0 +1,111 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (created on the current commit if it does not exist yet)'
+        required: true
+        default: 'v1.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build apk (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # exact-version SDK images bundle the toolchain; 25.12.x matches OpenWrt 25.12 routers
+          - arch: x86_64
+            sdk: ghcr.io/openwrt/sdk:x86_64-25.12.6
+          - arch: aarch64_generic
+            sdk: ghcr.io/openwrt/sdk:aarch64_generic-25.12.6
+    container:
+      image: ${{ matrix.sdk }}
+      options: --user root
+    steps:
+      - name: Checkout package into the SDK tree
+        uses: actions/checkout@v4
+        with:
+          path: /builder/package/luci-app-nginx-reverseproxy
+
+      - name: Prepare feeds and config
+        run: |
+          cd /builder
+          ./scripts/feeds update base packages luci
+          ./scripts/feeds install -a
+          make defconfig
+
+      - name: Build package
+        run: |
+          cd /builder
+          make package/luci-app-nginx-reverseproxy/compile V=sc
+
+      - name: Collect apk
+        run: |
+          mkdir -p /builder/dist
+          cp /builder/bin/packages/${{ matrix.arch }}/luci/luci-app-nginx-reverseproxy_*.apk /builder/dist/
+          ls -la /builder/dist/
+
+      - name: Upload apk artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.arch }}
+          path: /builder/dist/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Create release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download apks
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: apk-*
+          merge-multiple: true
+
+      - name: Source tarball + checksums
+        run: |
+          TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          tar czf "luci-app-nginx-reverseproxy-${TAG}.tar.gz" --exclude='.git' .
+          mv dist/*.apk dist/ 2>/dev/null || true
+          cp "luci-app-nginx-reverseproxy-${TAG}.tar.gz" dist/
+          (cd dist && sha256sum * > SHA256SUMS)
+          ls -la dist/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          name: "luci-app-nginx-reverseproxy ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          body: |
+            Release of **luci-app-nginx-reverseproxy** ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}.
+
+            ## Install (apk, OpenWrt 25.12)
+
+            ```sh
+            # pick the apk matching your arch, e.g. x86_64 or aarch64_generic:
+            apk add --allow-untrusted luci-app-nginx-reverseproxy_*_<arch>.apk
+            ```
+
+            Built with the OpenWrt SDK 25.12.6 (`ghcr.io/openwrt/sdk`). Dependencies (`luci-base`, `nginx`, `openssl-util`) are pulled automatically by apk.
+
+            Install via feeds (see README) or from the attached source tarball. Changelog: see commits since the previous tag.
+          files: |
+            dist/*.apk
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          generate_release_notes: true
+          draft: false
+          prerelease: false
